@@ -1,0 +1,113 @@
+version: '3.8'
+
+services:
+#  patients-db:
+#    image: postgres:latest
+#    container_name: patients-db
+#    environment:
+#      POSTGRES_USER: test
+#      POSTGRES_PASSWORD: test
+#      POSTGRES_DB: patients
+#    ports:
+#      - "5432:5432"
+#    volumes:
+#      - ./NewPatientsPostgres:/docker-entrypoint-initdb.d
+#    networks:
+#      - hospital-network
+#    healthcheck:
+#      test: ["CMD-SHELL", "pg_isready -U test -d patients"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
+
+  research-db:
+    image: postgres:latest
+    container_name: research-db
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: research
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./ResearchPostgres:/docker-entrypoint-initdb.d
+    networks:
+      - hospital-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test -d research"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  metrics_collector:
+    build:
+      context: ./MetricsCollectorService
+      dockerfile: Dockerfile
+    environment:
+      DB_NAME: research
+      DB_USER: test
+      DB_PASSWORD: test
+      DB_HOST: research-db
+      DB_PORT: 5432
+    networks:
+      - hospital-network
+    depends_on:
+      - research-db
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3100:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    networks:
+      - hospital-network
+    depends_on:
+      - prometheus
+# volume config zum Daten speichern
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./MetricsCollectorService/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - hospital-network
+
+
+#  anonymization-service:
+#    build:
+#      context: ./AnonymizationService
+#      dockerfile: Dockerfile
+#    ports:
+#      - "8081:8080"
+#    networks:
+#      - hospital-network
+#    depends_on:
+#      - research-db
+
+#  patient-management-service:
+#    build:
+#      context: ./NewPatientService
+#      dockerfile: Dockerfile
+#    ports:
+#      - "8080:8080"
+#    networks:
+#      - hospital-network
+#    depends_on:
+#      - patients-db
+
+#  load-generator:
+#    build:
+#      context: ./LoadGenerator
+#      dockerfile: Dockerfile
+#    environment:
+#      TARGET_URL: "http://patient-management-service:8080"
+#    networks:
+#      - hospital-network
+#    depends_on:
+#      - patient-management-service
+
+networks:
+  hospital-network:
+    driver: bridge
