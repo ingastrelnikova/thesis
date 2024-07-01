@@ -20,9 +20,9 @@ services:
 #      timeout: 5s
 #      retries: 5
 
-  research-db:
+  research-db1:
     image: postgres:latest
-    container_name: research-db
+    container_name: research-db1
     environment:
       POSTGRES_USER: test
       POSTGRES_PASSWORD: test
@@ -39,52 +39,52 @@ services:
       timeout: 5s
       retries: 5
 
-  metrics_collector:
-    build:
-      context: ./MetricsCollectorService
-      dockerfile: Dockerfile
-    environment:
-      DB_NAME: research
-      DB_USER: test
-      DB_PASSWORD: test
-      DB_HOST: research-db
-      DB_PORT: 5432
-    networks:
-      - hospital-network
-    depends_on:
-      - research-db
-
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - "3100:3000"
-    environment:
-      GF_SECURITY_ADMIN_PASSWORD: admin
-    networks:
-      - hospital-network
-    depends_on:
-      - prometheus
-# volume config zum Daten speichern
-  prometheus:
-    image: prom/prometheus:latest
-    ports:
-      - "9091:9090"
-    volumes:
-      - ./MetricsCollectorService/prometheus.yml:/etc/prometheus/prometheus.yml
-    networks:
-      - hospital-network
-
-
-#  anonymization-service:
+#  metrics_collector:
 #    build:
-#      context: ./AnonymizationService
+#      context: ./MetricsCollectorService
 #      dockerfile: Dockerfile
-#    ports:
-#      - "8081:8080"
+#    environment:
+#      DB_NAME: research
+#      DB_USER: test
+#      DB_PASSWORD: test
+#      DB_HOST: research-db
+#      DB_PORT: 5432
 #    networks:
 #      - hospital-network
 #    depends_on:
 #      - research-db
+#
+#  grafana:
+#    image: grafana/grafana:latest
+#    ports:
+#      - "3100:3000"
+#    environment:
+#      GF_SECURITY_ADMIN_PASSWORD: admin
+#    networks:
+#      - hospital-network
+#    depends_on:
+#      - prometheus
+## volume config zum Daten speichern
+#  prometheus:
+#    image: prom/prometheus:latest
+#    ports:
+#      - "9091:9090"
+#    volumes:
+#      - ./MetricsCollectorService/prometheus.yml:/etc/prometheus/prometheus.yml
+#    networks:
+#      - hospital-network
+
+
+  anonymization-service:
+    build:
+      context: ./AnonymizationService
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8080"
+    networks:
+      - hospital-network
+    depends_on:
+      - research-db1
 
 #  patient-management-service:
 #    build:
